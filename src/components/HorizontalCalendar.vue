@@ -26,14 +26,15 @@
           v-bind:key="index"
           v-on:click="changeChoosedDay(day)"
           v-bind:class="{
-            'choosed-day': day.dateFormat == choosedDay.dateFormat,
-            'today': day.dateFormat == today.dateFormat && lang == 'zh',
+            'choosed-day':
+              day.dateFormat == formatOneDay(this.modelValue).dateFormat,
+            today: day.dateFormat == today.dateFormat && lang == 'zh',
             'date-item-weekend': day.isWeekend,
             'date-highlighted': highlightedDates.includes(day.dateFormat),
           }"
           v-bind:style="{
             'background-color':
-              day.dateFormat == choosedDay.dateFormat
+              day.dateFormat == formatOneDay(this.modelValue).dateFormat
                 ? choosedItemColor
                 : day.dateFormat == today.dateFormat
                 ? todayItemColor
@@ -41,30 +42,32 @@
           }"
           :data-date="day.month + '-' + day.date + '-' + day.year"
         >
-          <slot :day="day" :today="today" :choosedDay="choosedDay">
-            <template>
-              <div>
-                <p class="date-item-day">{{ day.day }}</p>
-                <p
-                  class="date-item-date"
-                  v-if="day.dateFormat == today.dateFormat && lang == 'zh'"
-                  v-bind:style="{
-                    color:
-                      day.dateFormat == choosedDay.dateFormat
-                        ? '#fff'
-                        : day.dateFormat == today.dateFormat
-                        ? choosedItemColor
-                        : '',
-                  }"
-                >
-                  今
-                </p>
-                <p class="date-item-date" v-else>{{ day.date }}</p>
-              </div>
-              <div class="first-day" v-if="day.date == 1">
-                <p>{{ day.month }}</p>
-              </div>
-            </template>
+          <slot
+            :day="day"
+            :today="today"
+            :choosedDay="formatOneDay(this.modelValue)"
+          >
+            <div>
+              <p class="date-item-day">{{ day.day }}</p>
+              <p
+                class="date-item-date"
+                v-if="day.dateFormat == today.dateFormat && lang == 'zh'"
+                v-bind:style="{
+                  color:
+                    day.dateFormat == formatOneDay(this.modelValue).dateFormat
+                      ? '#fff'
+                      : day.dateFormat == today.dateFormat
+                      ? choosedItemColor
+                      : '',
+                }"
+              >
+                今
+              </p>
+              <p class="date-item-date" v-else>{{ day.date }}</p>
+            </div>
+            <div class="first-day" v-if="day.date == 1">
+              <p>{{ day.month }}</p>
+            </div>
           </slot>
         </div>
       </div>
@@ -79,15 +82,88 @@
   </div>
 </template>
 <script>
-import "../assets/iconfont.js";
+import '../assets/iconfont.js';
+
+const dict_en = {
+  0: 'Su',
+  1: 'Mo',
+  2: 'Tu',
+  3: 'We',
+  4: 'Th',
+  5: 'Fr',
+  6: 'Sa',
+};
+const dict_es = {
+  0: 'Do',
+  1: 'Lu',
+  2: 'Ma',
+  3: 'Mi',
+  4: 'Ju',
+  5: 'Vi',
+  6: 'Sa',
+};
+const dict_it = {
+  0: 'Do',
+  1: 'Lu',
+  2: 'Ma',
+  3: 'Me',
+  4: 'Gi',
+  5: 'Ve',
+  6: 'Sa',
+};
+const dict_fr = {
+  0: 'Di',
+  1: 'Lu',
+  2: 'Ma',
+  3: 'Me',
+  4: 'Je',
+  5: 'Ve',
+  6: 'Sa',
+};
+const dict_de = {
+  0: 'So',
+  1: 'Mo',
+  2: 'Di',
+  3: 'Mi',
+  4: 'Do',
+  5: 'Fr',
+  6: 'Sa',
+};
+const dict_sk = {
+  0: 'Ne',
+  1: 'Po',
+  2: 'Ut',
+  3: 'St',
+  4: 'Št',
+  5: 'Pi',
+  6: 'So',
+};
+const dict_cs = {
+  0: 'Ne',
+  1: 'Po',
+  2: 'Út',
+  3: 'St',
+  4: 'Čt',
+  5: 'Pá',
+  6: 'So',
+};
+const dict_pt_BR = {
+  0: 'Dom.',
+  1: 'Seg.',
+  2: 'Ter.',
+  3: 'Qua.',
+  4: 'Qui.',
+  5: 'Sex.',
+  6: 'Sáb.',
+};
 
 export default {
-  name: "vue-horizontal-calendar",
+  name: 'vue-horizontal-calendar',
   props: {
     // 默认选中的日期, 今天； 可接收格式如 ‘2019/12/01’ 或 ‘2019-12-01’ 标准UTC格式时间
-    choosedDate: {
+    modelValue: {
       type: [String, Date],
-      required: false,
+      required: true,
       default: () => {
         return new Date();
       },
@@ -110,43 +186,43 @@ export default {
     choosedDatePos: {
       type: String,
       required: false,
-      default: "left",
+      default: 'left',
     },
     // 最小日期，可接收格式如 ‘2019/12/01’ 或 ‘2019-12-01’ 或 标准UTC格式时间
     minDate: {
       type: [String, Date],
       required: false,
-      default: "",
+      default: '',
     },
     // 最大日期，可接收格式如 ‘2019/12/01’ 或 ‘2019-12-01’ 或 标准UTC格式时间
     maxDate: {
       type: [String, Date],
       required: false,
-      default: "",
+      default: '',
     },
     // 选中的日期背景色
     choosedItemColor: {
       type: String,
       required: false,
-      default: "rgb(13, 141, 224)",
+      default: 'rgb(13, 141, 224)',
     },
     // ‘今天’未选中时的背景色
     todayItemColor: {
       type: String,
       required: false,
-      default: "rgba(13, 141, 224,.1)",
+      default: 'rgba(13, 141, 224,.1)',
     },
     // 星期天的中文字，默认‘日’，可自定义，如‘天’
     sundayText: {
       type: String,
       required: false,
-      default: "日",
+      default: '日',
     },
     // 是否显示日历组件的顶部边框
     showBorderTop: {
       type: Boolean,
       required: false,
-      default: true,
+      default: false,
     },
     // 屏幕尺寸改变时，是否重绘日历组件
     resizeable: {
@@ -158,7 +234,11 @@ export default {
     lang: {
       type: String,
       required: false,
-      default: "zh",
+      default: 'zh',
+    },
+    customDict: {
+      type: Object,
+      required: false,
     },
   },
   data() {
@@ -193,7 +273,6 @@ export default {
   mounted() {
     this.init();
     // 触发change事件
-    this.$emit("change", this.choosedDay);
 
     /**
      * @@author jacques
@@ -234,16 +313,16 @@ export default {
       // "今天"
       this.today = this.formatOneDay(new Date());
       // "当前选中的日期"
-      this.choosedDay = this.formatOneDay(this.choosedDate);
+      this.choosedDay = this.formatOneDay(this.modelValue);
 
       // 第一天
-      const firstDay = this.formatOneDay(this.choosedDate);
-      if (this.choosedDatePos === "center") {
+      const firstDay = this.formatOneDay(this.modelValue);
+      if (this.choosedDatePos === 'center') {
         const ts1 =
           firstDay.timestamp -
           parseInt(this.visibleDay / 2) * 1000 * 60 * 60 * 24;
         this.firstDay = this.formatOneDay(ts1);
-      } else if (this.choosedDatePos === "right") {
+      } else if (this.choosedDatePos === 'right') {
         const ts2 =
           firstDay.timestamp -
           parseInt(this.visibleDay - 1) * 1000 * 60 * 60 * 24;
@@ -254,7 +333,7 @@ export default {
       this.creatList();
 
       // 事件回调: 当前显示的第一天的数据
-      this.$emit("firstDayChange", this.firstDay);
+      this.$emit('firstDayChange', this.firstDay);
     },
     // 初始化，生成一列日期
     creatList() {
@@ -275,7 +354,7 @@ export default {
     // 日期点击事件
     changeChoosedDay(day) {
       this.choosedDay = day;
-      this.$emit("change", day);
+      this.$emit('update:modelValue', day.value);
     },
     // 左右滑动翻页 1：往后加载7天，-1：往前加载7天
     dateFlip(type) {
@@ -292,7 +371,7 @@ export default {
           // 2，如果由于最小日期限制，加载已经到头，则不再加载新的日期,直接滚动到最左边
         } else if (!this.swipeLeftMore) {
           this.translateX = 0;
-          this.$emit("swipeToEnd", "left");
+          this.$emit('swipeToEnd', 'left');
         } else {
           //,3，以上条件都不满足，则说明左侧已经没有可展示的日期了，要新增数据
           const fdt = this.dateList[0].timestamp;
@@ -311,14 +390,14 @@ export default {
             }
           }
           // 消除过渡效果，插入新日期，变更x轴位置，以抵消插入数据带来的位置变化
-          this.transitionDuration = "0ms";
+          this.transitionDuration = '0ms';
           this.dateList.unshift(...list);
           // i 表示新增的日期数量； 因为循环可能会被最大最小值中断，所以 i 相对于 changeCount 更准确
           this.translateX = this.translateX - this.rectWidth * i;
 
           // 异步重置过渡效果，位移div
           setTimeout(() => {
-            this.transitionDuration = "300ms";
+            this.transitionDuration = '300ms';
             this.translateX = this.translateX + this.rectWidth * i;
           }, 1);
         }
@@ -326,7 +405,9 @@ export default {
       } else if (type === 1) {
         // 判断右侧是否有可滚动的日期，有的话则直接滚动
         const hasSpace =
-          this.dateList.length * this.rectWidth - this.domWidth + this.translateX;
+          this.dateList.length * this.rectWidth -
+          this.domWidth +
+          this.translateX;
 
         // 1，有完整可滚动的日期，则直接滚动
         if (hasSpace > this.rectWidth * this.changeCount) {
@@ -334,8 +415,9 @@ export default {
         } else {
           // 2，如果由于最大日期限制，加载已经到头，则不再加载新的日期; 直接滚动到末端；
           if (!this.swipeRightMore) {
-            this.translateX = (this.dateList.length - this.visibleDay) * -this.rectWidth;
-            this.$emit("swipeToEnd", "right");
+            this.translateX =
+              (this.dateList.length - this.visibleDay) * -this.rectWidth;
+            this.$emit('swipeToEnd', 'right');
             return;
           }
           // 3，以上都不满足，则需要生成新日期，然后滚动
@@ -355,7 +437,8 @@ export default {
           }
           // 如果i小于固定移动单位，则说明由于最大日期限制，最后位移的单位并不完全充足；此时i的值，受最小日期和屏幕宽度以及移动距离影响，是不定的值，因此只能借助以下计算方式。
           if (i < this.changeCount) {
-            this.translateX = (this.dateList.length - this.visibleDay) * -this.rectWidth;
+            this.translateX =
+              (this.dateList.length - this.visibleDay) * -this.rectWidth;
           } else {
             this.translateX = this.translateX - this.rectWidth * i;
           }
@@ -389,25 +472,26 @@ export default {
           );
         }
         // 事件回调: 当前显示的第一天的数据
-        this.$emit("firstDayChange", this.firstDay);
+        this.$emit('firstDayChange', this.firstDay);
       }, 300);
 
       // 事件回调，返回滑动事件类型
-      this.$emit("swipeClick", type === 1 ? "right" : "left");
+      this.$emit('swipeClick', type === 1 ? 'right' : 'left');
     },
     // 格式化单个日期的数据
     formatOneDay(day) {
       const timestamp = new Date(day).getTime();
       const date = this.formatDateTime(timestamp); // 2019/06/01
-      const dateArray = date.split("/"); // [2019,06,01]
+      const dateArray = date.split('/'); // [2019,06,01]
       // 去掉补位的0
       for (const key in dateArray) {
-        if (dateArray[key].indexOf("0") == 0) {
+        if (dateArray[key].indexOf('0') == 0) {
           dateArray[key] = dateArray[key].substr(1, 1);
         }
       }
       const week = new Date(timestamp).getDay();
       return {
+        value: new Date(date),
         dateFormat: date,
         year: dateArray[0],
         month: dateArray[1],
@@ -421,111 +505,56 @@ export default {
     getWeekName(day) {
       const dict = {
         0: this.sundayText,
-        1: "一",
-        2: "二",
-        3: "三",
-        4: "四",
-        5: "五",
-        6: "六",
+        1: '一',
+        2: '二',
+        3: '三',
+        4: '四',
+        5: '五',
+        6: '六',
       };
-      const dict_en = {
-        0: "Su",
-        1: "Mo",
-        2: "Tu",
-        3: "We",
-        4: "Th",
-        5: "Fr",
-        6: "Sa",
-      };
-      const dict_es = {
-        0: "Do",
-        1: "Lu",
-        2: "Ma",
-        3: "Mi",
-        4: "Ju",
-        5: "Vi",
-        6: "Sa",
-      };
-      const dict_it = {
-        0: "Do",
-        1: "Lu",
-        2: "Ma",
-        3: "Me",
-        4: "Gi",
-        5: "Ve",
-        6: "Sa",
-      };
-      const dict_fr = {
-        0: "Di",
-        1: "Lu",
-        2: "Ma",
-        3: "Me",
-        4: "Je",
-        5: "Ve",
-        6: "Sa",
-      };
-      const dict_de = {
-        0: "So",
-        1: "Mo",
-        2: "Di",
-        3: "Mi",
-        4: "Do",
-        5: "Fr",
-        6: "Sa",
-      };
-      const dict_sk = {
-        0: "Ne",
-        1: "Po",
-        2: "Ut",
-        3: "St",
-        4: "Št",
-        5: "Pi",
-        6: "So",
-      };
-      const dict_cs = {
-        0: "Ne",
-        1: "Po",
-        2: "Út",
-        3: "St",
-        4: "Čt",
-        5: "Pá",
-        6: "So",
-      };
+
+      if (this.customDict) {
+        return this.customDict[day];
+      }
+
       // 如果是英文显示
       switch (this.lang) {
-        case "en":
+        case 'en':
           return dict_en[day];
-        case "es":
+        case 'es':
           return dict_es[day];
-        case "it":
+        case 'it':
           return dict_it[day];
-        case "fr":
+        case 'fr':
           return dict_fr[day];
-        case "de":
+        case 'de':
           return dict_de[day];
-        case "sk":
+        case 'sk':
           return dict_sk[day];
-        case "cs":
+        case 'cs':
           return dict_cs[day];
+        case 'pt-BR':
+          return dict_pt_BR[day];
         default:
           return dict[day];
       }
     },
     // 输入时间戳，返回 YYYY/MM/DD 日期格式
     formatDateTime(timestamp) {
-      if (!timestamp) return "";
+      if (!timestamp) return '';
       timestamp = parseInt(timestamp); // 防止传入字符串类型
       const fdt = new Date(timestamp);
       const arr = [fdt.getMonth() + 1, fdt.getDate()];
       for (let key in arr) {
         if (arr[key] < 10) {
-          arr[key] = "0" + arr[key];
+          arr[key] = '0' + arr[key];
         }
       }
       arr.unshift(fdt.getFullYear());
-      return arr[0] + "/" + arr[1] + "/" + arr[2];
+      return arr[0] + '/' + arr[1] + '/' + arr[2];
     },
   },
+  expose: [],
   computed: {
     // 最小日期的0点时间戳
     minDateTimestamp() {
@@ -552,11 +581,20 @@ export default {
     choosedDate(newChoosedDate) {
       this.choosedDay = this.formatOneDay(newChoosedDate);
     },
+    modelValue(newChoosedDate) {
+      if (
+        this.dateList[0].value >= newChoosedDate ||
+        this.dateList[this.dateList.length - 1].value <= newChoosedDate
+      ) {
+        this.init();
+      }
+    },
   },
+  emits: ['update:modelValue'],
 };
 </script>
-
-<style>
+<script setup></script>
+<style scoped>
 .horizontal-calendar {
   width: 100%;
   border-bottom: 1px solid #f2f2f2;
@@ -608,11 +646,13 @@ export default {
   height: 50px;
   padding: 5px 2px;
   line-height: 20px;
-  border-right: 1px solid #f2f2f2;
+  border: 1px solid #f2f2f2;
   background-color: #fff;
   font-size: 14px;
   text-align: center;
   cursor: pointer;
+
+  margin-right: 5px;
 }
 
 .horizontal-calendar .date-item:hover {
